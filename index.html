@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Depression vs Happiness</title>
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+</head>
+<body>
+  <label for="year-select">Year:</label>
+  <select id="year-select"></select>
+
+  <script>
+    let margin = {top: 10, right: 30, bottom: 50, left: 70},
+        width = 460 - margin.left - margin.right,
+        height = 400 - margin.top - margin.bottom;
+
+    let svg = d3.select("body")
+      .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    d3.csv("https://gist.githubusercontent.com/Nikithakatta30/5af6f9143327728ac153cb333f996cfc/raw/7a20a1f88f2d5b98fb455d05bf03a9a89bc0b682/Project.csv").then(data => {
+      // Create a unique list of years
+      let years = Array.from(new Set(data.map(d => d.Year)));
+
+      // Create a select element with the unique years as options
+      let select = d3.select("#year-select");
+      select
+        .selectAll('option')
+        .data(years)
+        .enter()
+        .append('option')
+        .text(d => d);
+
+      // Add X axis
+      let x = d3.scaleLinear()
+        .domain([0, d3.max(data, d => +d.Happiness_Score)])
+        .range([0, width]);
+
+      svg.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(x))
+        .append("text")
+        .attr("x", width/2)
+        .attr("y", margin.bottom - 5)
+        .attr("text-anchor", "middle")
+        .text("Happiness Score");
+
+      // Add Y axis
+      let y = d3.scaleLinear()
+        .domain([0, d3.max(data, d => +d.Allages)])
+        .range([height, 0]);
+
+      svg.append("g")
+        .call(d3.axisLeft(y))
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", -margin.left)
+        .attr("x", -height / 2)
+        .attr("dy", "1em")
+        .attr("text-anchor", "middle")
+        .text("Depression Rate");
+
+      let dots = svg.append('g')
+        .selectAll("dot")
+        .data(data.filter(d => d.Year === years[0]))
+        .enter()
+        .append("circle")
+        .attr("cx", function(d) { return x(d.Happiness_Score); })
+        .attr("cy", function(d) { return y(d.Allages); })
+        .attr("r", 1.5)
+        .style("fill", "#69b3a2");
+
+      select.on("change", function() {
+        let selectedYear = select.node().value;
+        let newData = data.filter(d => d.Year === selectedYear);
+        dots.data(newData)
+          .transition()
+          .duration(1000)
+          .attr("cx", function(d) { return x(d.Happiness_Score); })
+          .attr("cy", function(d) { return y(d.Allages); });
+      });
+    });
+  </script>
+</body>
+</html>
